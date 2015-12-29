@@ -18,7 +18,7 @@ import java.util.concurrent.Executor;
 /*package*/ class TaskProxy<ResultType> extends AbsTask<ResultType> {
 
     /*package*/ static final InternalHandler sHandler = new InternalHandler();
-    /*package*/ static final PriorityExecutor sDefaultExecutor = new PriorityExecutor();
+    /*package*/ static final PriorityExecutor sDefaultExecutor = new PriorityExecutor(true);
 
     private final AbsTask<ResultType> task;
     private final Executor executor;
@@ -165,8 +165,8 @@ import java.util.concurrent.Executor;
             super(Looper.getMainLooper());
         }
 
-        @SuppressWarnings("unchecked")
         @Override
+        @SuppressWarnings("unchecked")
         public void handleMessage(Message msg) {
             if (msg.obj == null) {
                 throw new IllegalArgumentException("msg must not be null");
