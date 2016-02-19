@@ -21,11 +21,11 @@ import java.util.HashSet;
  * Author: wyouflf
  * Time: 2014/05/30
  */
-public final class HttpRetryHandler {
+public class HttpRetryHandler {
 
     protected int maxRetryCount = 2;
 
-    private static HashSet<Class<?>> blackList = new HashSet<Class<?>>();
+    protected static HashSet<Class<?>> blackList = new HashSet<Class<?>>();
 
     static {
         blackList.add(HttpException.class);
@@ -49,7 +49,7 @@ public final class HttpRetryHandler {
         this.maxRetryCount = maxRetryCount;
     }
 
-    public boolean retryRequest(Throwable ex, int count, UriRequest request) {
+    public boolean canRetry(UriRequest request, Throwable ex, int count) {
 
         LogUtil.w(ex.getMessage(), ex);
 

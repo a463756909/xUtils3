@@ -90,6 +90,16 @@ public interface DbManager extends Closeable {
     ///////////// table
 
     /**
+     * 获取表信息
+     *
+     * @param entityType
+     * @param <T>
+     * @return
+     * @throws DbException
+     */
+    <T> TableEntity<T> getTable(Class<T> entityType) throws DbException;
+
+    /**
      * 删除表
      *
      * @param entityType
@@ -142,7 +152,7 @@ public interface DbManager extends Closeable {
     }
 
     public interface TableCreateListener {
-        public void onTableCreate(DbManager db, TableEntity<?> table);
+        public void onTableCreated(DbManager db, TableEntity<?> table);
     }
 
     public static class DaoConfig {

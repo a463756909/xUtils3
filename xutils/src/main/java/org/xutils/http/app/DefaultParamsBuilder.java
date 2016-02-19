@@ -23,11 +23,12 @@ public class DefaultParamsBuilder implements ParamsBuilder {
     /**
      * 根据@HttpRequest构建请求的url
      *
+     * @param params
      * @param httpRequest
      * @return
      */
     @Override
-    public String buildUri(HttpRequest httpRequest) {
+    public String buildUri(RequestParams params, HttpRequest httpRequest) {
         return httpRequest.host() + "/" + httpRequest.path();
     }
 
@@ -46,7 +47,7 @@ public class DefaultParamsBuilder implements ParamsBuilder {
 
             cacheKey = params.getUri() + "?";
 
-            // 添加cacheKeys对应的queryParams
+            // 添加cacheKeys对应的参数
             for (String key : cacheKeys) {
                 String value = params.getStringParameter(key);
                 if (value != null) {

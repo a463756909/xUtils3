@@ -7,15 +7,21 @@
     2. 支持标准的Cookie策略, 区分domain, path...
     3. 事件注解去除不常用的功能, 提高性能.
     4. 数据库api简化提高性能, 达到和greenDao一致的性能.
-    5. 图片绑定支持gif, webp; 支持圆角, 圆形, 方形等裁剪, 支持自动旋转...
+    5. 图片绑定支持gif(受系统兼容性影响, 部分gif文件只能静态显示), webp; 支持圆角, 圆形, 方形等裁剪, 支持自动旋转...
 
 #### 使用Gradle构建时添加一下依赖即可:
 ```javascript
-compile 'org.xutils:xutils:3.1.24'
+compile 'org.xutils:xutils:3.3.4'
 ```
 ##### 如果使用eclipse可以 [点击这里下载aar文件](http://dl.bintray.com/wyouflf/maven/org/xutils/xutils/), 然后用zip解压, 取出jar包和so文件.
 ##### 混淆配置参考示例项目sample的配置
 
+
+#### 常见问题:
+1. 更好的管理图片缓存: https://github.com/wyouflf/xUtils3/issues/149
+2. Cookie的使用: https://github.com/wyouflf/xUtils3/issues/125
+3. 关于query参数? http请求可以通过 header, url, body(请求体)传参; query参数是url中问号(?)后面的参数.
+4. 关于body参数? body参数只有PUT, POST, PATCH, DELETE(老版本RFC2616文档没有明确指出它是否支持, 所以暂时支持)请求支持.
 
 #### 使用前配置
 ##### 需要的权限
@@ -39,16 +45,9 @@ public void onCreate() {
 ```java
 /**
  * 1. 方法必须私有限定,
- * 2. 方法以Click或Event结尾, 方便配置混淆编译参数 :
- * -keepattributes *Annotation*
- * -keepclassmembers class * {
- * void *(android.view.View);
- * *** *Click(...);
- * *** *Event(...);
- * }
- * 3. 方法参数形式必须和type对应的Listener接口一致.
- * 4. 注解参数value支持数组: value={id1, id2, id3}
- * 5. 其它参数说明见{@link org.xutils.event.annotation.Event}类的说明.
+ * 2. 方法参数形式必须和type对应的Listener接口一致.
+ * 3. 注解参数value支持数组: value={id1, id2, id3}
+ * 4. 其它参数说明见{@link org.xutils.event.annotation.Event}类的说明.
  **/
 @Event(value = R.id.btn_test_baidu1,
         type = View.OnClickListener.class/*可选参数, 默认是View.OnClickListener.class*/)
@@ -104,9 +103,9 @@ Callback.Cancelable cancelable
         *
         * 3. 请求过程拦截或记录日志: 参考 {@link org.xutils.http.app.RequestTracker}
         *
-        * 4. 请求Header获取: 参考 {@link org.xutils.http.app.InterceptRequestListener}
+        * 4. 请求Header获取: 参考 {@link org.xutils.http.app.RequestInterceptListener}
         *
-        * 5. 其他(线程池, 超时, 重定向, 重试, 代理等): 参考 {@link org.xutils.http.RequestParams
+        * 5. 其他(线程池, 超时, 重定向, 重试, 代理等): 参考 {@link org.xutils.http.RequestParams}
         *
         **/
        new Callback.CommonCallback<String>() {
@@ -141,11 +140,7 @@ Callback.Cancelable cancelable
            }
        });
 
-// cancelable.cancel(); // 取消
-// 如果需要记录请求的日志, 可使用RequestTracker接口(优先级依次降低, 找到一个实现后会忽略后面的):
-// 1. 自定义Callback同时实现RequestTracker接口;
-// 2. 自定义ResponseParser同时实现RequestTracker接口;
-// 3. 在LoaderFactory注册.
+// cancelable.cancel(); // 取消请求
 ```
 #### 如果你只需要一个简单的版本:
 ```java
