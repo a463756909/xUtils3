@@ -7,6 +7,7 @@ import org.xutils.common.util.IOUtil;
 import org.xutils.common.util.ParameterizedTypeUtil;
 import org.xutils.http.RequestParams;
 import org.xutils.http.annotation.HttpResponse;
+import org.xutils.http.app.InputStreamResponseParser;
 import org.xutils.http.app.ResponseParser;
 import org.xutils.http.request.UriRequest;
 
@@ -98,14 +99,23 @@ import java.util.List;
 
     @Override
     public Object load(final InputStream in) throws Throwable {
-        resultStr = IOUtil.readStr(in, charset);
-        return parser.parse(objectType, objectClass, resultStr);
+        Object result;
+        if (parser instanceof InputStreamResponseParser) {
+            result = ((InputStreamResponseParser) parser).parse(objectType, objectClass, in);
+        } else {
+            resultStr = IOUtil.readStr(in, charset);
+            result = parser.parse(objectType, objectClass, resultStr);
+        }
+        return result;
     }
 
     @Override
     public Object load(final UriRequest request) throws Throwable {
-        request.sendRequest();
-        parser.checkResponse(request);
+        try {
+            request.sendRequest();
+        } finally {
+            parser.checkResponse(request);
+        }
         return this.load(request.getInputStream());
     }
 
