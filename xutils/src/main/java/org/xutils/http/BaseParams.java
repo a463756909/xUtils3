@@ -137,6 +137,12 @@ import java.util.Map;
                         for (Object item : (List) value) {
                             this.bodyParams.add(new ArrayItem(name, item));
                         }
+                    } else if (value instanceof JSONArray) {
+                        JSONArray array = (JSONArray) value;
+                        int len = array.length();
+                        for (int i = 0; i < len; i++) {
+                            this.bodyParams.add(new ArrayItem(name, array.opt(i)));
+                        }
                     } else if (value.getClass().isArray()) {
                         int len = Array.getLength(value);
                         for (int i = 0; i < len; i++) {
@@ -417,8 +423,7 @@ import java.util.Map;
         final StringBuilder sb = new StringBuilder();
         if (!queryStringParams.isEmpty()) {
             for (KeyValue kv : queryStringParams) {
-                sb.append("&").append(kv.key).append("=").append(kv.value);
-
+                sb.append(kv.key).append("=").append(kv.value).append("&");
             }
             sb.deleteCharAt(sb.length() - 1);
         }
@@ -430,8 +435,7 @@ import java.util.Map;
             } else {
                 if (!bodyParams.isEmpty()) {
                     for (KeyValue kv : bodyParams) {
-                        sb.append("&").append(kv.key).append("=").append(kv.value);
-
+                        sb.append(kv.key).append("=").append(kv.value).append("&");
                     }
                     sb.deleteCharAt(sb.length() - 1);
                 }
