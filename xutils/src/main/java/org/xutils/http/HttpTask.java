@@ -40,6 +40,7 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
     private UriRequest request;
     private RequestWorker requestWorker;
     private final Executor executor;
+    private volatile boolean hasException = false;
     private final Callback.CommonCallback<ResultType> callback;
 
     // 缓存控制
@@ -253,6 +254,8 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
                         synchronized (cacheLock) {
                             try {
                                 cacheLock.wait();
+                            } catch (InterruptedException iex) {
+                                throw new Callback.CancelledException("cancelled before request");
                             } catch (Throwable ignored) {
                             }
                         }
@@ -345,20 +348,25 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
                 retry = true;
                 LogUtil.w("Http Redirect:" + params.getUri());
             } catch (Throwable ex) {
-                if (this.request.getResponseCode() == 304) { // disk cache is valid.
-                    return null;
-                } else {
-                    exception = ex;
-                    if (this.isCancelled() && !(exception instanceof Callback.CancelledException)) {
-                        exception = new Callback.CancelledException("canceled by user");
+                switch (this.request.getResponseCode()) {
+                    case 204: // empty content
+                    case 205: // empty content
+                    case 304: // disk cache is valid.
+                        return null;
+                    default: {
+                        exception = ex;
+                        if (this.isCancelled() && !(exception instanceof Callback.CancelledException)) {
+                            exception = new Callback.CancelledException("canceled by user");
+                        }
+                        retry = retryHandler.canRetry(this.request, exception, ++retryCount);
                     }
-                    retry = retryHandler.canRetry(this.request, exception, ++retryCount);
                 }
             }
 
         }
 
         if (exception != null && result == null && !trustCache) {
+            hasException = true;
             throw exception;
         }
 
@@ -437,12 +445,11 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
 
     @Override
     protected void onSuccess(ResultType result) {
+        if (hasException) return;
         if (tracker != null) {
             tracker.onSuccess(request, result);
         }
-        if (result != null) {
-            callback.onSuccess(result);
-        }
+        callback.onSuccess(result);
     }
 
     @Override
@@ -581,12 +588,16 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
 
         public void run() {
             try {
+                boolean interrupted = false;
                 if (File.class == loadType) {
                     while (sCurrFileLoadCount.get() >= MAX_FILE_LOAD_WORKER
                             && !HttpTask.this.isCancelled()) {
                         synchronized (sCurrFileLoadCount) {
                             try {
-                                sCurrFileLoadCount.wait(100);
+                                sCurrFileLoadCount.wait();
+                            } catch (InterruptedException iex) {
+                                interrupted = true;
+                                break;
                             } catch (Throwable ignored) {
                             }
                         }
@@ -594,8 +605,8 @@ public class HttpTask<ResultType> extends AbsTask<ResultType> implements Progres
                     sCurrFileLoadCount.incrementAndGet();
                 }
 
-                if (HttpTask.this.isCancelled()) {
-                    throw new Callback.CancelledException("cancelled before request");
+                if (interrupted || HttpTask.this.isCancelled()) {
+                    throw new Callback.CancelledException("cancelled before request" + (interrupted ? "(interrupted)" : ""));
                 }
 
                 // intercept response
